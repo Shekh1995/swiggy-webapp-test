@@ -62,6 +62,6 @@ steps:
     inputs:
       azureSubscription: 'himanshu-yt-sc'
       appType: 'webAppLinux'
-      appName: 'swiggy-clone-webapp'
+      appName: 'swiggy-web-app-test1'
       package: '$(Build.ArtifactStagingDirectory)/foodrush-$(Build.BuildId).zip'
       runtimeStack: 'NODE|20-lts'
