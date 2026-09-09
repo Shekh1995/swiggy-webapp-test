@@ -12,34 +12,79 @@ variables:
 
 steps:
 
+# 1. Checkout source code
 - checkout: self
   displayName: 'Checkout source code'
 
+
+# 2. Install Node.js
 - task: NodeTool@0
   displayName: 'Install Node.js'
   inputs:
     versionSpec: '$(nodeVersion)'
 
+
+# 3. Install all dependencies
 - script: |
+    echo ==============================
+    echo Node.js version
+    echo ==============================
     node --version
+
+    echo ==============================
+    echo NPM version
+    echo ==============================
     npm --version
+
+    echo ==============================
+    echo Installing dependencies
+    echo ==============================
     npm install --include=dev
+
+    echo ==============================
+    echo Checking installed packages
+    echo ==============================
+    npm list vite
+    npm list @vitejs/plugin-react
+
+    echo ==============================
+    echo Checking Vite
+    echo ==============================
     npx vite --version
   displayName: 'Install dependencies and verify Vite'
 
+
+# 4. Build React/Vite application
 - script: |
+    echo ==============================
+    echo Building React application
+    echo ==============================
+
     npx vite build
+
+    echo ==============================
+    echo Build completed
+    echo ==============================
   displayName: 'Build React application'
 
+
+# 5. Verify dist directory
 - script: |
+    echo ==============================
+    echo Checking build output
+    echo ==============================
+
     if not exist "$(buildFolder)" (
       echo ERROR: dist directory was not created.
       exit /b 1
     )
-    echo Build completed successfully.
+
+    echo Build output found successfully.
     dir "$(buildFolder)"
   displayName: 'Verify build output'
 
+
+# 6. Create ZIP deployment package
 - task: ArchiveFiles@2
   displayName: 'Create deployment package'
   inputs:
@@ -49,6 +94,8 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)\foodrush.zip'
     replaceExistingArchive: true
 
+
+# 7. Publish artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build artifact'
   inputs:
@@ -56,6 +103,8 @@ steps:
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
+
+# 8. Deploy to Azure Linux Web App
 - task: AzureWebApp@1
   displayName: 'Deploy to Azure Web App'
   inputs:
