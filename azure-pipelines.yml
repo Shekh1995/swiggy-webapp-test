@@ -13,7 +13,7 @@ variables:
 steps:
 
 # ============================================================
-# 1. Checkout
+# 1. Checkout source code
 # ============================================================
 - checkout: self
   displayName: 'Checkout source code'
@@ -29,61 +29,93 @@ steps:
 
 
 # ============================================================
-# 3. Verify Node and npm
+# 3. Verify Node.js and npm
 # ============================================================
 - script: |
+    echo ==============================
+    echo Node.js Version
+    echo ==============================
     node --version
+
+    echo ==============================
+    echo NPM Version
+    echo ==============================
     npm --version
   displayName: 'Verify Node.js and npm'
 
 
 # ============================================================
-# 4. Install project dependencies
+# 4. Install dependencies + Vite
 # ============================================================
 - script: |
-    echo Installing project dependencies...
+    echo ==============================
+    echo Installing project dependencies
+    echo ==============================
+
     npm install --include=dev
 
     echo.
-    echo Installing Vite and React Vite plugin explicitly...
+    echo ==============================
+    echo Installing Vite
+    echo ==============================
+
     npm install --save-dev vite@6.0.5 @vitejs/plugin-react@4.3.4
 
     echo.
-    echo Checking installed Vite:
+    echo ==============================
+    echo Checking Vite
+    echo ==============================
+
     npm list vite
 
     echo.
-    echo Checking installed React Vite plugin:
+    echo ==============================
+    echo Checking React Vite Plugin
+    echo ==============================
+
     npm list @vitejs/plugin-react
 
     echo.
-    echo Checking Vite executable:
+    echo ==============================
+    echo Vite Version
+    echo ==============================
+
     npx vite --version
-  displayName: 'Install dependencies and Vite'
+  displayName: 'Install dependencies and verify Vite'
 
 
 # ============================================================
 # 5. Build React application
 # ============================================================
 - script: |
-    echo Building React application...
+    echo ==============================
+    echo Building React application
+    echo ==============================
+
     npx vite build
+
+    echo.
+    echo ==============================
+    echo React build completed
+    echo ==============================
   displayName: 'Build React application'
 
 
 # ============================================================
-# 6. Verify build output
+# 6. Verify dist folder
 # ============================================================
 - script: |
+    echo ==============================
+    echo Verifying build output
+    echo ==============================
+
     if not exist "$(buildFolder)" (
       echo ERROR: dist directory was not created.
       exit /b 1
     )
 
     echo.
-    echo ========================================
     echo BUILD SUCCESSFUL
-    echo ========================================
     echo.
 
     dir "$(buildFolder)"
@@ -118,9 +150,11 @@ steps:
 # 9. Deploy to Azure Linux Web App
 # ============================================================
 - task: AzureWebApp@1
-  displayName: 'Deploy to Azure Web App'
+  displayName: 'Deploy FoodRush to Azure Web App'
   inputs:
     azureSubscription: '$(azureServiceConnection)'
     appType: 'webAppLinux'
     appName: '$(azureWebAppName)'
     package: '$(Build.ArtifactStagingDirectory)\foodrush.zip'
+    runtimeStack: 'NODE|20-lts'
+    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa --port 8080'
