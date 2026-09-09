@@ -28,7 +28,7 @@ steps:
   displayName: 'Install dependencies and verify Vite'
 
 - script: |
-    npm run build
+    npx vite build
   displayName: 'Build React application'
 
 - script: |
@@ -36,7 +36,6 @@ steps:
       echo ERROR: dist directory was not created.
       exit /b 1
     )
-
     echo Build completed successfully.
     dir "$(buildFolder)"
   displayName: 'Verify build output'
@@ -58,10 +57,9 @@ steps:
     publishLocation: 'Container'
 
 - task: AzureWebApp@1
-  displayName: 'Deploy FoodRush to Azure Web App'
+  displayName: 'Deploy to Azure Web App'
   inputs:
     azureSubscription: '$(azureServiceConnection)'
     appType: 'webAppLinux'
     appName: '$(azureWebAppName)'
     package: '$(Build.ArtifactStagingDirectory)\foodrush.zip'
-    runtimeStack: 'NODE|22-lts'
