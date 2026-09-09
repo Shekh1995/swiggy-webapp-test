@@ -12,67 +12,56 @@ variables:
 
 steps:
 
-# Checkout code
 - checkout: self
   displayName: 'Checkout source code'
 
-# Install Node.js
 - task: NodeTool@0
   displayName: 'Install Node.js'
   inputs:
     versionSpec: '$(nodeVersion)'
 
-# Install dependencies
 - script: |
     node --version
     npm --version
-    npm install
-  displayName: 'Install dependencies'
+    npm install --include=dev
+    npx vite --version
+  displayName: 'Install dependencies and verify Vite'
 
-# Build React/Vite application
 - script: |
     npm run build
   displayName: 'Build React application'
 
-# Verify build
 - script: |
-    echo "Checking build output..."
+    if not exist "$(buildFolder)" (
+      echo ERROR: dist directory was not created.
+      exit /b 1
+    )
 
-    if [ ! -d "$(buildFolder)" ]; then
-      echo "ERROR: dist directory was not created."
-      exit 1
-    fi
-
-    echo "Build completed successfully."
-    echo "Build contents:"
-    find "$(buildFolder)" -maxdepth 2 -type f
+    echo Build completed successfully.
+    dir "$(buildFolder)"
   displayName: 'Verify build output'
 
-# Create ZIP
 - task: ArchiveFiles@2
   displayName: 'Create deployment package'
   inputs:
     rootFolderOrFile: '$(buildFolder)'
     includeRootFolder: false
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/foodrush.zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)\foodrush.zip'
     replaceExistingArchive: true
 
-# Publish artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build artifact'
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/foodrush.zip'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)\foodrush.zip'
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
-# Deploy to Azure Web App
 - task: AzureWebApp@1
   displayName: 'Deploy FoodRush to Azure Web App'
   inputs:
     azureSubscription: '$(azureServiceConnection)'
     appType: 'webAppLinux'
     appName: '$(azureWebAppName)'
-    package: '$(Build.ArtifactStagingDirectory)/foodrush.zip'
-    runtimeStack: 'NODE|20-lts'
-    startUpCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
+    package: '$(Build.ArtifactStagingDirectory)\foodrush.zip'
+    runtimeStack: 'NODE|22-lts'
