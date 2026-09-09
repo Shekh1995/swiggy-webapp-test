@@ -12,79 +12,87 @@ variables:
 
 steps:
 
-# 1. Checkout source code
+# ============================================================
+# 1. Checkout
+# ============================================================
 - checkout: self
   displayName: 'Checkout source code'
 
 
+# ============================================================
 # 2. Install Node.js
+# ============================================================
 - task: NodeTool@0
-  displayName: 'Install Node.js'
+  displayName: 'Install Node.js 20'
   inputs:
     versionSpec: '$(nodeVersion)'
 
 
-# 3. Install all dependencies
+# ============================================================
+# 3. Verify Node and npm
+# ============================================================
 - script: |
-    echo ==============================
-    echo Node.js version
-    echo ==============================
     node --version
-
-    echo ==============================
-    echo NPM version
-    echo ==============================
     npm --version
+  displayName: 'Verify Node.js and npm'
 
-    echo ==============================
-    echo Installing dependencies
-    echo ==============================
+
+# ============================================================
+# 4. Install project dependencies
+# ============================================================
+- script: |
+    echo Installing project dependencies...
     npm install --include=dev
 
-    echo ==============================
-    echo Checking installed packages
-    echo ==============================
+    echo.
+    echo Installing Vite and React Vite plugin explicitly...
+    npm install --save-dev vite@6.0.5 @vitejs/plugin-react@4.3.4
+
+    echo.
+    echo Checking installed Vite:
     npm list vite
+
+    echo.
+    echo Checking installed React Vite plugin:
     npm list @vitejs/plugin-react
 
-    echo ==============================
-    echo Checking Vite
-    echo ==============================
+    echo.
+    echo Checking Vite executable:
     npx vite --version
-  displayName: 'Install dependencies and verify Vite'
+  displayName: 'Install dependencies and Vite'
 
 
-# 4. Build React/Vite application
+# ============================================================
+# 5. Build React application
+# ============================================================
 - script: |
-    echo ==============================
-    echo Building React application
-    echo ==============================
-
+    echo Building React application...
     npx vite build
-
-    echo ==============================
-    echo Build completed
-    echo ==============================
   displayName: 'Build React application'
 
 
-# 5. Verify dist directory
+# ============================================================
+# 6. Verify build output
+# ============================================================
 - script: |
-    echo ==============================
-    echo Checking build output
-    echo ==============================
-
     if not exist "$(buildFolder)" (
       echo ERROR: dist directory was not created.
       exit /b 1
     )
 
-    echo Build output found successfully.
+    echo.
+    echo ========================================
+    echo BUILD SUCCESSFUL
+    echo ========================================
+    echo.
+
     dir "$(buildFolder)"
   displayName: 'Verify build output'
 
 
-# 6. Create ZIP deployment package
+# ============================================================
+# 7. Create deployment ZIP
+# ============================================================
 - task: ArchiveFiles@2
   displayName: 'Create deployment package'
   inputs:
@@ -95,7 +103,9 @@ steps:
     replaceExistingArchive: true
 
 
-# 7. Publish artifact
+# ============================================================
+# 8. Publish artifact
+# ============================================================
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build artifact'
   inputs:
@@ -104,7 +114,9 @@ steps:
     publishLocation: 'Container'
 
 
-# 8. Deploy to Azure Linux Web App
+# ============================================================
+# 9. Deploy to Azure Linux Web App
+# ============================================================
 - task: AzureWebApp@1
   displayName: 'Deploy to Azure Web App'
   inputs:
