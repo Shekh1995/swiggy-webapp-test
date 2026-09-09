@@ -1,0 +1,67 @@
+# Azure DevOps CI/CD pipeline for FoodRush (Swiggy-style food delivery clone)
+# Update azureSubscription and appName before running the pipeline.
+
+trigger:
+  - main
+
+pool:
+  name: agent-runner-himanshu2
+
+variables:
+  nodeVersion: '20.x'
+  buildDirectory: 'dist'
+
+steps:
+  - checkout: self
+    displayName: 'Checkout source code'
+
+  - task: NodeTool@0
+    displayName: 'Install Node.js'
+    inputs:
+      versionSpec: '$(nodeVersion)'
+
+  - script: |
+      node --version
+      npm --version
+      npm ci
+    displayName: 'Install dependencies'
+
+  - script: |
+      npm run build
+    displayName: 'Build React application'
+
+  - script: |
+      test -d "$(buildDirectory)"
+      echo "Build completed successfully."
+      echo "Build contents:"
+      find "$(buildDirectory)" -maxdepth 2 -type f | head -50
+    displayName: 'Verify build output'
+
+  - task: ArchiveFiles@2
+    displayName: 'Create deployment package'
+    inputs:
+      rootFolderOrFile: '$(buildDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/foodrush-$(Build.BuildId).zip'
+      replaceExistingArchive: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish build artifact'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/foodrush-$(Build.BuildId).zip'
+      ArtifactName: 'drop'
+      publishLocation: 'Container'
+
+  # Azure Web App deployment
+  # Replace:
+  #   himanshu-yt-sc -> your Azure Resource Manager service connection
+  #   swiggy-clone-webapp -> your actual Azure Web App name
+  - task: AzureWebApp@1
+    displayName: 'Deploy FoodRush to Azure Web App'
+    inputs:
+      azureSubscription: 'himanshu-yt-sc'
+      appType: 'webAppLinux'
+      appName: 'swiggy-clone-webapp'
+      package: '$(Build.ArtifactStagingDirectory)/foodrush-$(Build.BuildId).zip'
+      runtimeStack: 'NODE|20-lts'
