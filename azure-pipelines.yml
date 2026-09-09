@@ -8,7 +8,7 @@ variables:
   nodeVersion: '20.x'
   buildFolder: 'dist'
   azureServiceConnection: 'himanshu-yt-sc'
-  azureWebAppName: 'yt-app-test'
+  azureWebAppName: 'swiggy-web-app-test1'
 
 steps:
 
