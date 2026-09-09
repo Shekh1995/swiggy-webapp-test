@@ -1,7 +1,6 @@
 trigger:
   - main
 
-# Azure DevOps self-hosted Linux agent
 pool:
   name: agent-runner-himanshu2
 
@@ -9,45 +8,47 @@ variables:
   nodeVersion: '20.x'
   buildFolder: 'dist'
   azureServiceConnection: 'himanshu-yt-sc'
-  azureWebAppName: 'YOUR-AZURE-WEBAPP-NAME'
+  azureWebAppName: 'YOUR-ACTUAL-WEBAPP-NAME'
 
 steps:
 
-# 1. Get code from Azure DevOps Repos
+# Checkout code
 - checkout: self
   displayName: 'Checkout source code'
 
-# 2. Install Node.js
+# Install Node.js
 - task: NodeTool@0
   displayName: 'Install Node.js'
   inputs:
     versionSpec: '$(nodeVersion)'
 
-# 3. Install application dependencies
+# Install dependencies
 - script: |
     node --version
     npm --version
     npm install
   displayName: 'Install dependencies'
 
-# 4. Build React application
+# Build React/Vite application
 - script: |
     npm run build
   displayName: 'Build React application'
 
-# 5. Verify React build
+# Verify build
 - script: |
-    echo "Checking React build..."
+    echo "Checking build output..."
+
     if [ ! -d "$(buildFolder)" ]; then
-      echo "ERROR: $(buildFolder) directory was not created."
+      echo "ERROR: dist directory was not created."
       exit 1
     fi
 
-    echo "Build successful."
-    ls -la "$(buildFolder)"
+    echo "Build completed successfully."
+    echo "Build contents:"
+    find "$(buildFolder)" -maxdepth 2 -type f
   displayName: 'Verify build output'
 
-# 6. Create deployment ZIP
+# Create ZIP
 - task: ArchiveFiles@2
   displayName: 'Create deployment package'
   inputs:
@@ -57,7 +58,7 @@ steps:
     archiveFile: '$(Build.ArtifactStagingDirectory)/foodrush.zip'
     replaceExistingArchive: true
 
-# 7. Publish pipeline artifact
+# Publish artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish build artifact'
   inputs:
@@ -65,7 +66,7 @@ steps:
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
-# 8. Deploy from Azure DevOps to Azure Web App
+# Deploy to Azure Web App
 - task: AzureWebApp@1
   displayName: 'Deploy FoodRush to Azure Web App'
   inputs:
